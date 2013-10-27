@@ -65,6 +65,8 @@ if __name__ == '__main__':
             formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
         parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
+        parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
+        parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
         parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
         parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
@@ -75,8 +77,18 @@ if __name__ == '__main__':
         print "Retrieving tossups from Quinterest.org..."
         documentList = []
 
+        if args.category:
+            category = args.category
+        else:
+            category = "All"
+
+        if args.difficulty:
+            difficulty = args.difficulty
+        else:
+            difficulty = "All"
+
         for answerLine in answerLines:
-            tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=All&difficulty=All&stype=Answer&tournamentyear=All")
+            tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All")
             tossup = tossup.translate(string.maketrans("", ""), string.punctuation)
             documentList.append(tossup)
 
