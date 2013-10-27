@@ -59,38 +59,33 @@ Boreas has many options such as:
         <th>Default</th>
     </tr>
     <tr>
-        <th>-t or --terms</th>
+        <th>-t</th>
         <th>Limits amount of words shown</th>
         <th>All terms printed</th>
     </tr>
     <tr>
-        <th>-a or --answer</th>
+        <th>-a</th>
         <th>Specifies answer line from list</th>
         <th>Analyze each answer</th>
     </tr>
     <tr>
-        <th>-o or --output</th>
+        <th>-o</th>
         <th>Saves results to a text file, multiple queries saved to respective
         text files</th>
-        <th>Print to Std-out</th>
+        <th>Print to stdout</th>
     </tr>
     <tr>
-        <th>-u or --upper</th>
+        <th>-u</th>
         <th>Prints only words beginning with upper case letters, such as names</th>
         <th>Off</th>
     </tr>
     <tr>
-        <th>-l or --lower</th>
+        <th>-l</th>
         <th>Prints only words beginning with lower case letters, such as common
         words</th>
         <th>Off</th>
     </tr>
 </table>
-* -t or --terms (Limits amount of words shown, default: all)
-* -a or --answer (Specifies answer line from list, default: analyze each answer)
-* -o or --output (Saves results to a text file, multiple queries are saved to respective text files, default: print to std-out)
-* -u or --upper (Prints only words beginning with upper case, such as names, default: off)
-* -l or --lower (Prints only words beginning with lower case, such as common words, default: off)
 
 Please note that -u and -l cannot be used in conjuction
 
