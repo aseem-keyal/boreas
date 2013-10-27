@@ -85,6 +85,7 @@ Boreas has many options such as:
         words</th>
         <th>Off</th>
     </tr>
+</table>
 * -t or --terms (Limits amount of words shown, default: all)
 * -a or --answer (Specifies answer line from list, default: analyze each answer)
 * -o or --output (Saves results to a text file, multiple queries are saved to respective text files, default: print to std-out)
