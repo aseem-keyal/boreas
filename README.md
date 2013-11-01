@@ -85,6 +85,16 @@ Boreas has many options such as:
         words</th>
         <th>Off</th>
     </tr>
+    <tr>
+        <th>-c</th>
+        <th>Filters by category: Science, History, Literature, etc.</th>
+        <th>All</th>
+    </tr>
+    <tr>
+        <th>-d</th>
+        <th>Filters by difficulty: HS, College, MS, Open, etc.</th>
+        <th>All</th>
+    </tr>
 </table>
 
 Please note that -u and -l cannot be used in conjuction
