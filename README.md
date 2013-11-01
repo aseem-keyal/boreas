@@ -24,8 +24,12 @@ Boreas requires the BeautifulSoup library to parse the HTML that it retrieves fr
 
 General Tips
 ------------
-When picking answer lines, pick answers that are similar in nature, such as Chinese dynasties or architects. This will allow the tf-idf algorith to filter out words common to those topics such as "trade" or "building", respectively.
-
+When picking answer lines, pick answers that are similar in nature, such as
+Chinese dynasties or architects. This will allow the tf-idf algorith to filter
+out words common to those topics such as "trade" or "building", respectively.
+The program is also most effective when a large selection of answerlines is
+used. Also when using category ambiguous answers like "mercury", please
+designate the category (Mythology or Science) to avoid erroneous results.
 Usage
 --------------
 
