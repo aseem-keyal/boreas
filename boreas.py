@@ -2,7 +2,6 @@
 
 from BeautifulSoup import BeautifulSoup
 from operator import itemgetter
-from textblob import Word
 import math
 import string
 import argparse
@@ -72,12 +71,13 @@ if __name__ == '__main__':
         parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
         parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
         parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
-        parser.add_argument('-m', '--meaning', help='prints definitions of words', action='store_true')
         parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
+        parser.add_argument('-x', '--xargs', help='prints in format perfect for xargs', action='store_true')
         args = parser.parse_args()
         answerLines = args.list.split(',')
 
-        print "Retrieving tossups from Quinterest.org..."
+        if not args.xargs:
+            print "Retrieving tossups from Quinterest.org..."
         documentList = []
 
         if args.category:
@@ -127,21 +127,28 @@ if __name__ == '__main__':
             else:
                 words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)
 
+            if args.xargs:
+                display = "%s|"
+            elif not args.xargs:
+                display = "%f <= %s\n"
+
             if args.output:
                 f = open(answerLine + '.txt', 'wb+')
                 print "writing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt"
                 f.write("writing " + str(len(words)) + "  results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
                 for item in words:
-                    if args.meaning:
-                        f.write("%f <= %s | %s\n" % (item[1], item[0], Word(item[0]).define()[0]))
-                    else:
-                        f.write("%f <= %s\n" % (item[1], item[0]))
+                        f.write(display % (item[1], item[0]))
 
                 f.close()
             else:
-                print "showing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "'"
+                if not args.xargs:
+                    print "showing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "'"
+                if args.xargs:
+                    sys.stdout.write("'(")
                 for item in words:
-                    if args.meaning:
-                        print "%f <= %s | %s" % (item[1], item[0], ', '.join(Word(item[0]).define()))
+                    if args.xargs:
+                        sys.stdout.write(display % (item[0]))
                     else:
-                        print "%f <= %s" % (item[1], item[0])
+                        sys.stdout.write(display % (item[1], item[0]))
+                if args.xargs:
+                    sys.stdout.write(")'")
