@@ -2,6 +2,7 @@
 
 from BeautifulSoup import BeautifulSoup
 from operator import itemgetter
+from textblob import Word
 import math
 import string
 import argparse
@@ -71,6 +72,8 @@ if __name__ == '__main__':
         parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
         parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
         parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
+        parser.add_argument('-m', '--meaning', help='prints definitions of words', action='store_true')
+        parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
         args = parser.parse_args()
         answerLines = args.list.split(',')
 
@@ -120,18 +123,25 @@ if __name__ == '__main__':
                 words[word] = tfidf(word, documentList[documentNumber], documentList)
 
             if args.terms and len(words.keys()) > args.terms > 0:
-                words = sorted(words.items(), key=itemgetter(1), reverse=True)[:args.terms]
+                words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)[:args.terms]
             else:
-                words = sorted(words.items(), key=itemgetter(1), reverse=True)
+                words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)
 
             if args.output:
                 f = open(answerLine + '.txt', 'wb+')
                 print "writing results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt"
                 f.write("writing results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
                 for item in words:
-                    f.write("%f <= %s\n" % (item[1], item[0]))
+                    if args.meaning:
+                        f.write("%f <= %s | %s\n" % (item[1], item[0], Word(item[0]).define()[0]))
+                    else:
+                        f.write("%f <= %s" % (item[1], item[0]))
+
                 f.close()
             else:
                 print "showing results for '" + answerLines[documentNumber] + "'"
                 for item in words:
-                    print "%f <= %s" % (item[1], item[0])
+                    if args.meaning:
+                        print "%f <= %s | %s" % (item[1], item[0], ', '.join(Word(item[0]).define()))
+                    else:
+                        print "%f <= %s" % (item[1], item[0])

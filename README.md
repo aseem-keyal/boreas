@@ -99,6 +99,16 @@ Boreas has many options such as:
         <th>Filters by difficulty: HS, College, MS, Open, etc.</th>
         <th>All</th>
     </tr>
+    <tr>
+        <th>-m</th>
+        <th>Attempts to display definition of the word</th>
+        <th>Off</th>
+    </tr>
+    <tr>
+        <th>-r</th>
+        <th>Prints terms in reverse (accending) order</th>
+        <th>Off</th>
+    </tr>
 </table>
 
 Please note that -u and -l cannot be used in conjuction
