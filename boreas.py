@@ -129,17 +129,17 @@ if __name__ == '__main__':
 
             if args.output:
                 f = open(answerLine + '.txt', 'wb+')
-                print "writing results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt"
-                f.write("writing results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
+                print "writing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt"
+                f.write("writing " + str(len(words)) + "  results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
                 for item in words:
                     if args.meaning:
                         f.write("%f <= %s | %s\n" % (item[1], item[0], Word(item[0]).define()[0]))
                     else:
-                        f.write("%f <= %s" % (item[1], item[0]))
+                        f.write("%f <= %s\n" % (item[1], item[0]))
 
                 f.close()
             else:
-                print "showing results for '" + answerLines[documentNumber] + "'"
+                print "showing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "'"
                 for item in words:
                     if args.meaning:
                         print "%f <= %s | %s" % (item[1], item[0], ', '.join(Word(item[0]).define()))
