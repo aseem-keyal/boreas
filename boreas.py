@@ -58,9 +58,9 @@ if __name__ == '__main__':
             description='This program performs tf-idf analysis on Quiz Bowl questions with a given answer line against other answer lines requested, with tossups provided from Quinterest.org',
             epilog=
             """Examples:
-                python boreas.py teddy+roosevelt,taft,eisenhower,lyndon+johnson taft -t 10
-                python boreas.py chromium,iridium,sodium,nickel,magnesium magnesium -u -o elements.txt
-                python boreas.py war+autrian+succession,thirty+years+war,war+spanish+succession thirty+years+war -t 6 -o wars.txt
+                python boreas.py teddy+roosevelt,taft,eisenhower,lyndon+johnson -t 10
+                python boreas.py chromium,iridium,sodium,nickel,magnesium -a magnesium -u -o
+                python boreas.py war+autrian+succession,thirty+years+war,war+spanish+succession -a thirty+years+war -t 6 -o
             """,
             formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
