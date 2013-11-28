@@ -9,19 +9,39 @@ import sys
 import urllib2
 
 
-def getTossups(url):
-    html = urllib2.urlopen(url).read()
+def getTossups(url, name):
+    f = open('.cache', 'ab+')
+    cache = f.read()
+    f.close()
+    query = 'tossups for ' + name + ': '
+    if query not in cache:
+        if not args.xargs:
+            print "Retrieving " + name + " tossups from Quinterest.org..."
+        html = urllib2.urlopen(url).read()
 
-    soup = BeautifulSoup(html)
-    page = soup.findAll('p')
-    tossups = ''
-    for tossup in page:
-        tossup = str(tossup.contents)
-        length = tossup.__len__() - 2
-        tossup = tossup[24:length]
-        tossup += ' '
-        tossups += tossup
-    return tossups
+        soup = BeautifulSoup(html)
+        page = soup.findAll('p')
+        tossups = ''
+        for tossup in page:
+            tossup = str(tossup.contents)
+            length = tossup.__len__() - 2
+            tossup = tossup[24:length]
+            tossup += ' '
+            tossups += tossup
+
+        f = open('.cache', 'ab+')
+        f.write(query)
+        f.write(tossups + '\n')
+        f.close()
+        return tossups
+    else:
+        if not args.xargs:
+            print "Retrieving " + name + " tossups from .cache..."
+        index1 = cache.find(query)
+        cache = cache[index1 + len(query):]
+        index2 = cache.find('tossups')
+        cache = cache[:index2]
+        return cache
 
 
 def freq(word, document):
@@ -76,8 +96,6 @@ if __name__ == '__main__':
         args = parser.parse_args()
         answerLines = args.list.split(',')
 
-        if not args.xargs:
-            print "Retrieving tossups from Quinterest.org..."
         documentList = []
 
         if args.category:
@@ -91,7 +109,7 @@ if __name__ == '__main__':
             difficulty = "All"
 
         for answerLine in answerLines:
-            tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All")
+            tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
             tossup = tossup.translate(string.maketrans("", ""), string.punctuation)
             documentList.append(tossup)
 
