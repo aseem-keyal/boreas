@@ -7,6 +7,7 @@ import string
 import argparse
 import sys
 import urllib2
+import re
 
 
 def getTossups(url, name):
@@ -29,6 +30,9 @@ def getTossups(url, name):
             tossup += ' '
             tossups += tossup
 
+        tossups = tossups.translate(string.maketrans("", ""), """!"#$%&'+,./:;<=>*?@\^_`{|}~""")
+        tossups = re.sub(r'\(.*?\)', '', tossups)
+        tossups = re.sub(r'\[.*?\]', '', tossups)
         f = open('.cache', 'ab+')
         f.write(query)
         f.write(tossups + '\n')
@@ -110,7 +114,6 @@ if __name__ == '__main__':
 
         for answerLine in answerLines:
             tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
-            tossup = tossup.translate(string.maketrans("", ""), string.punctuation)
             documentList.append(tossup)
 
         if args.answer and args.answer in answerLines:
