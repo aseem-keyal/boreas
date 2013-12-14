@@ -27,6 +27,7 @@ def setupParser():
         parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
         parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
+        parser.add_argument('-w', '--weighting', help='weighting value for index weighting', type=int, default=10000)
         parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
         parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
         parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
@@ -143,9 +144,9 @@ def idf(word, documentList):
     return math.log(len(documentList) / float(numDocsContaining(word, documentList)))
 
 
-def tfidf(word, index, documentList, collection, augment):
+def tfidf(word, index, documentList, collection, augment, weighting):
     if augment and getWordRank(collection[index], word) != 0:
-        return ((tf(word, documentList[index]) * idf(word, documentList)) * (10000 / getWordRank(collection[index], word)))
+        return ((tf(word, documentList[index]) * idf(word, documentList)) * (weighting / getWordRank(collection[index], word)))
     else:
         return (tf(word, documentList[index]) * idf(word, documentList))
 
@@ -178,7 +179,7 @@ if __name__ == '__main__':
 
             words = {}
             for word in realWords:
-                words[word] = tfidf(word, documentNumber, documentList, collection, args.index)
+                words[word] = tfidf(word, documentNumber, documentList, collection, args.index, args.weighting)
 
             if args.terms and len(words.keys()) > args.terms > 0:
                 words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)[:args.terms]
