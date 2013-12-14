@@ -10,6 +10,44 @@ import urllib2
 import re
 
 
+def setupParser():
+        parser = argparse.ArgumentParser(
+            description='This program performs tf-idf analysis on Quiz Bowl questions with a given answer line against other answer lines requested, with tossups provided from Quinterest.org',
+            epilog=
+            """Examples:
+                python boreas.py teddy+roosevelt,taft,eisenhower,lyndon+johnson -t 10
+                python boreas.py chromium,iridium,sodium,nickel,magnesium -a magnesium -u -o
+                python boreas.py war+autrian+succession,thirty+years+war,war+spanish+succession -a thirty+years+war -t 6 -o
+            """,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
+        parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
+        parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
+        parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
+        parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
+        parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
+        parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
+        parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
+        parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
+        parser.add_argument('-x', '--xargs', help='prints in format perfect for xargs', action='store_true')
+        return parser.parse_args()
+
+
+def stripWords(tossups, lower, upper):
+    allWords = tossups.split(None)
+    commonWords = {"the", "of", "and", "a", "to", "in", "is", "you", "that", "it", "he", "was", "for", "on", "are", "as", "with", "his", "they", "I", "at", "be", "this", "have", "from", "or", "one", "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", "your", "can", "said", "there.", "use", "an", "each", "which", "she", "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", "then", "them", "these", "so", "some", "her", "would", "make", "like", "him", "into", "time", "has", "look", "two", "more", "write", "go", "see", "number", "no", "way", "could", "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now", "find", "long", "down", "day", "did", "get", "come", "made", "may", "part"}
+    realWords = [x for x in allWords if x.lower() not in commonWords]
+
+    if upper and lower:
+        print "Please choose one option: --lower or --upper"
+        sys.exit(1)
+    elif upper and not lower:
+        realWords = [x for x in realWords if x.istitle()]
+    elif lower and not upper:
+        realWords = [x for x in realWords if not x.istitle()]
+    return realWords
+
+
 def getTossups(url, name):
     f = open('.cache', 'ab+')
     cache = f.read()
@@ -22,20 +60,22 @@ def getTossups(url, name):
 
         soup = BeautifulSoup(html)
         page = soup.findAll('p')
-        tossups = ''
+        tossups = []
         for tossup in page:
             tossup = str(tossup.contents)
             length = tossup.__len__() - 2
             tossup = tossup[24:length]
-            tossup += ' '
-            tossups += tossup
+            tossup = tossup.translate(string.maketrans("", ""), """!"#$%&'+,./:;<=>*?@\^_`{|}~""")
+            tossup = re.sub(r'\(.*?\)', '', tossup)
+            tossup = re.sub(r'\[.*?\]', '', tossup)
+            tossup = "tossup: " + tossup
+            tossups.append(tossup)
 
-        tossups = tossups.translate(string.maketrans("", ""), """!"#$%&'+,./:;<=>*?@\^_`{|}~""")
-        tossups = re.sub(r'\(.*?\)', '', tossups)
-        tossups = re.sub(r'\[.*?\]', '', tossups)
+        allTossups = " ".join(tossups)
+        allTossups = allTossups.replace("tossup: ", "")
         f = open('.cache', 'ab+')
         f.write(query)
-        f.write(tossups + '\n')
+        f.write(allTossups + '\n')
         f.close()
         return tossups
     else:
@@ -45,7 +85,18 @@ def getTossups(url, name):
         cache = cache[index1 + len(query):]
         index2 = cache.find('tossups')
         cache = cache[:index2]
-        return cache
+        tossups = cache.split('tossup: ')
+        return tossups
+
+
+def fetchDocuments(answerLines, category, difficulty):
+    documentList = []
+    for answerLine in answerLines:
+        tossupList = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
+        tossup = " ".join(tossupList)
+        tossup = tossup.replace("tossup: ", "")
+        documentList.append(tossup)
+    return documentList
 
 
 def freq(word, document):
@@ -77,44 +128,16 @@ def tfidf(word, document, documentList):
 
 
 if __name__ == '__main__':
-
-        parser = argparse.ArgumentParser(
-            description='This program performs tf-idf analysis on Quiz Bowl questions with a given answer line against other answer lines requested, with tossups provided from Quinterest.org',
-            epilog=
-            """Examples:
-                python boreas.py teddy+roosevelt,taft,eisenhower,lyndon+johnson -t 10
-                python boreas.py chromium,iridium,sodium,nickel,magnesium -a magnesium -u -o
-                python boreas.py war+autrian+succession,thirty+years+war,war+spanish+succession -a thirty+years+war -t 6 -o
-            """,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
-        parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
-        parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
-        parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
-        parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
-        parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
-        parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
-        parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
-        parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
-        parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
-        parser.add_argument('-x', '--xargs', help='prints in format perfect for xargs', action='store_true')
-        args = parser.parse_args()
+        args = setupParser()
         answerLines = args.list.split(',')
 
-        documentList = []
+        if args.category is None:
+            args.category = "All"
 
-        if args.category:
-            category = args.category
-        else:
-            category = "All"
+        if args.difficulty is None:
+            args.difficulty = "All"
 
-        if args.difficulty:
-            difficulty = args.difficulty
-        else:
-            difficulty = "All"
-
-        for answerLine in answerLines:
-            tossup = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
-            documentList.append(tossup)
+        documentList = fetchDocuments(answerLines, args.category, args.difficulty)
 
         if args.answer and args.answer in answerLines:
             answerLines2 = []
@@ -127,17 +150,7 @@ if __name__ == '__main__':
 
         for answerLine in answerLines2:
             documentNumber = answerLines.index(answerLine)
-            allWords = documentList[documentNumber].split(None)
-            commonWords = {"the", "of", "and", "a", "to", "in", "is", "you", "that", "it", "he", "was", "for", "on", "are", "as", "with", "his", "they", "I", "at", "be", "this", "have", "from", "or", "one", "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", "your", "can", "said", "there.", "use", "an", "each", "which", "she", "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", "then", "them", "these", "so", "some", "her", "would", "make", "like", "him", "into", "time", "has", "look", "two", "more", "write", "go", "see", "number", "no", "way", "could", "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now", "find", "long", "down", "day", "did", "get", "come", "made", "may", "part"}
-            realWords = [x for x in allWords if x.lower() not in commonWords]
-
-            if args.upper and args.lower:
-                print "Please choose one option: --lower or --upper"
-                sys.exit(1)
-            elif args.upper and not args.lower:
-                realWords = [x for x in realWords if x.istitle()]
-            elif args.lower and not args.upper:
-                realWords = [x for x in realWords if not x.istitle()]
+            realWords = stripWords(documentList[documentNumber], args.lower, args.upper)
 
             words = {}
             for word in realWords:
