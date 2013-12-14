@@ -22,6 +22,7 @@ def setupParser():
             formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
         parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
+        parser.add_argument('-i', '--index', help='adds index weighting, words coming earlier are weighted more', action='store_true')
         parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
         parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
@@ -42,9 +43,9 @@ def stripWords(tossups, lower, upper):
         print "Please choose one option: --lower or --upper"
         sys.exit(1)
     elif upper and not lower:
-        realWords = [x for x in realWords if x.istitle()]
+        realWords = [x for x in realWords if x[0].isupper()]
     elif lower and not upper:
-        realWords = [x for x in realWords if not x.istitle()]
+        realWords = [x for x in realWords if not x[0].isupper()]
     return realWords
 
 
@@ -89,13 +90,32 @@ def getTossups(url, name):
         return tossups
 
 
-def fetchDocuments(answerLines, category, difficulty):
-    documentList = []
+def getWordRank(list, word):
+    sum = 0
+    docs = 0
+    for tossup in list:
+        if tossup.find(word) != -1:
+            sum += tossup.find(word)
+            docs += 1
+
+    avg = sum / docs
+    return avg
+
+
+def constructCollection(answerLines, category, difficulty):
+    collection = []
     for answerLine in answerLines:
         tossupList = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
-        tossup = " ".join(tossupList)
-        tossup = tossup.replace("tossup: ", "")
-        documentList.append(tossup)
+        collection.append(tossupList)
+    return collection
+
+
+def constructDocumentList(collection):
+    documentList = []
+    for answerLine in collection:
+        document = " ".join(answerLine)
+        document = document.replace("tossup: ", "")
+        documentList.append(document)
     return documentList
 
 
@@ -123,8 +143,11 @@ def idf(word, documentList):
     return math.log(len(documentList) / float(numDocsContaining(word, documentList)))
 
 
-def tfidf(word, document, documentList):
-    return (tf(word, document) * idf(word, documentList))
+def tfidf(word, index, documentList, collection, augment):
+    if augment and getWordRank(collection[index], word) != 0:
+        return ((tf(word, documentList[index]) * idf(word, documentList)) * (10000 / getWordRank(collection[index], word)))
+    else:
+        return (tf(word, documentList[index]) * idf(word, documentList))
 
 
 if __name__ == '__main__':
@@ -137,7 +160,8 @@ if __name__ == '__main__':
         if args.difficulty is None:
             args.difficulty = "All"
 
-        documentList = fetchDocuments(answerLines, args.category, args.difficulty)
+        collection = constructCollection(answerLines, args.category, args.difficulty)
+        documentList = constructDocumentList(collection)
 
         if args.answer and args.answer in answerLines:
             answerLines2 = []
@@ -154,7 +178,7 @@ if __name__ == '__main__':
 
             words = {}
             for word in realWords:
-                words[word] = tfidf(word, documentList[documentNumber], documentList)
+                words[word] = tfidf(word, documentNumber, documentList, collection, args.index)
 
             if args.terms and len(words.keys()) > args.terms > 0:
                 words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)[:args.terms]
