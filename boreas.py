@@ -22,7 +22,7 @@ def setupParser():
             formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
         parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
-        parser.add_argument('-i', '--index', help='adds index weighting, words coming earlier are weighted more', action='store_true')
+        parser.add_argument('-i', '--index', help='adds index weighting, words coming earlier are weighted more', type=str)
         parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
         parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
@@ -145,10 +145,13 @@ def idf(word, documentList):
 
 
 def tfidf(word, index, documentList, collection, augment, weighting):
-    if augment and getWordRank(collection[index], word) != 0:
-        return ((tf(word, documentList[index]) * idf(word, documentList)) * (weighting / getWordRank(collection[index], word)))
+    if augment == 'combine' and getWordRank(collection[index], word) != 0:
+        return str((tf(word, documentList[index]) * idf(word, documentList)) * (weighting / getWordRank(collection[index], word)))[:8]
+    elif augment == 'separate' and getWordRank(collection[index], word) != 0:
+        result = str(tf(word, documentList[index]) * idf(word, documentList))[:8] + ', ' + str(weighting / getWordRank(collection[index], word))
+        return result
     else:
-        return (tf(word, documentList[index]) * idf(word, documentList))
+        return str(tf(word, documentList[index]) * idf(word, documentList))[:8]
 
 
 if __name__ == '__main__':
@@ -189,7 +192,7 @@ if __name__ == '__main__':
             if args.xargs:
                 display = "%s|"
             elif not args.xargs:
-                display = "%f <= %s\n"
+                display = "%s <= %s\n"
 
             if args.output:
                 f = open(answerLine + '.txt', 'wb+')

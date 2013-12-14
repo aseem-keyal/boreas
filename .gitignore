@@ -4,3 +4,4 @@ client.sh
 boreas_output
 .cache
 notus
+*.py.un~
