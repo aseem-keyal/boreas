@@ -27,7 +27,6 @@ def setupParser():
         parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
         parser.add_argument('-t', '--terms', help='number of terms to print (between zero and number of words)', type=int)
-        parser.add_argument('-w', '--weighting', help='weighting value for index weighting', type=int, default=10000)
         parser.add_argument('-u', '--upper', help='prints only upper case words', action='store_true')
         parser.add_argument('-l', '--lower', help='prints only lower case words', action='store_true')
         parser.add_argument('-r', '--reverse', help='prints list in reverse', action='store_false')
@@ -74,7 +73,6 @@ def getTossups(url, name):
             tossups.append(tossup)
 
         allTossups = " ".join(tossups)
-        allTossups = allTossups.replace("tossup: ", "")
         f = open('.cache', 'ab+')
         f.write(query)
         f.write(allTossups + '\n')
@@ -84,14 +82,16 @@ def getTossups(url, name):
         if not args.xargs:
             print "Retrieving " + name + " tossups from .cache..."
         index1 = cache.find(query)
-        cache = cache[index1 + len(query):]
+        cache = cache[index1 + len(query + "tossup: "):]
         index2 = cache.find('tossups')
-        cache = cache[:index2]
+        if index2 != -1:
+            cache = cache[:index2]
+
         tossups = cache.split('tossup: ')
         return tossups
 
 
-def getWordRank(list, word):
+def getWordRank(list, word, exploded):
     sum = 0
     docs = 0
     for tossup in list:
@@ -99,8 +99,14 @@ def getWordRank(list, word):
             sum += tossup.find(word)
             docs += 1
 
-    avg = sum / docs
-    return avg
+    if sum == 0:
+        sum = 1
+
+    avg = (docs * docs * 100) / float(sum)
+    if exploded:
+        return "rank: " + str(avg)[:8] + ", docs: " + str(docs) + "/" + str(len(list)) + ", earliness: " + str(10000 / float(sum))[:8]
+    else:
+        return avg
 
 
 def constructCollection(answerLines, category, difficulty):
@@ -144,14 +150,17 @@ def idf(word, documentList):
     return math.log(len(documentList) / float(numDocsContaining(word, documentList)))
 
 
-def tfidf(word, index, documentList, collection, augment, weighting):
-    if augment == 'combine' and getWordRank(collection[index], word) != 0:
-        return str((tf(word, documentList[index]) * idf(word, documentList)) * (weighting / getWordRank(collection[index], word)))[:8]
-    elif augment == 'separate' and getWordRank(collection[index], word) != 0:
-        result = str(tf(word, documentList[index]) * idf(word, documentList))[:8] + ', ' + str(weighting / getWordRank(collection[index], word))
-        return result
+def tfidf(word, index, documentList, collection, augment):
+    if augment == 'separate':
+        return "tf-idf: " + str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8] + ', weighting:' + str(getWordRank(collection[index], word, False))[:8]
+    elif augment == 'exploded':
+        return "tf-idf: " + str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8] + ', ' + getWordRank(collection[index], word, True)
+    elif augment == 'combined':
+        return float(str((tf(word, documentList[index]) * idf(word, documentList)) * getWordRank(collection[index], word, False) * 10000)[:8])
+    elif augment == 'alone':
+        return float(str(getWordRank(collection[index], word, False))[:8])
     else:
-        return str(tf(word, documentList[index]) * idf(word, documentList))[:8]
+        return float(str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8])
 
 
 if __name__ == '__main__':
@@ -182,7 +191,7 @@ if __name__ == '__main__':
 
             words = {}
             for word in realWords:
-                words[word] = tfidf(word, documentNumber, documentList, collection, args.index, args.weighting)
+                words[word] = tfidf(word, documentNumber, documentList, collection, args.index)
 
             if args.terms and len(words.keys()) > args.terms > 0:
                 words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)[:args.terms]
