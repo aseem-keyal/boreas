@@ -74,8 +74,9 @@ def getTossups(url, name):
 
         allTossups = " ".join(tossups)
         f = open('.cache', 'ab+')
-        f.write(query)
-        f.write(allTossups + '\n')
+        if len(tossups) > 0:
+            f.write(query)
+            f.write(allTossups + '\n')
         f.close()
         return tossups
     else:
