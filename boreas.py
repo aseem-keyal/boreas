@@ -95,9 +95,11 @@ def getTossups(url, name):
 def getWordRank(list, word, exploded):
     sum = 0
     docs = 0
+    length = 0
     for tossup in list:
         if tossup.find(word) != -1:
             sum += tossup.find(word)
+            length += len(tossup)
             docs += 1
 
     if sum == 0:
@@ -105,7 +107,7 @@ def getWordRank(list, word, exploded):
 
     avg = (docs * docs * 100) / float(sum)
     if exploded:
-        return "rank: " + str(avg)[:8] + ", docs: " + str(docs) + "/" + str(len(list)) + ", earliness: " + str(10000 / float(sum))[:8]
+        return "rank: " + str(avg)[:8] + ", tossups: " + str(docs) + "/" + str(len(list)) + ", earliness: " + str(1 / (float(sum) / length))[:8]
     else:
         return avg
 
