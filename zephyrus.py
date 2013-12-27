@@ -5,6 +5,7 @@ import argparse
 import urllib2
 import string
 import collections
+import json
 
 
 def getTossups(url):
@@ -43,6 +44,7 @@ def getAnswerLines(url):
         answer = answer.translate(string.maketrans("", ""), string.punctuation)
         answerLines.append(answer)
 
+    answerLines = filter(None, answerLines)
     return answerLines
 
 
@@ -71,4 +73,7 @@ if __name__ == '__main__':
             counter = collections.Counter(tossups)
             print counter.most_common(args.common)
         else:
-            print list(set(tossups))
+            counter = collections.Counter(tossups)
+            print json.dumps(tossups)
+            print len(tossups)
+            print counter.most_common(5)

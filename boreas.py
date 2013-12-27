@@ -2,11 +2,14 @@
 
 from BeautifulSoup import BeautifulSoup
 from operator import itemgetter
+from multiprocessing import Pool
 import math
+import urlparse
 import string
 import argparse
 import sys
 import urllib2
+import urllib
 import re
 
 
@@ -49,10 +52,12 @@ def stripWords(tossups, lower, upper):
     return realWords
 
 
-def getTossups(url, name):
+def getTossups(url):
     f = open('.cache', 'ab+')
     cache = f.read()
     f.close()
+    urlsub = url[url.find("?") + 1:]
+    name = urllib.quote_plus(dict(urlparse.parse_qsl(urlsub))['info'])
     query = 'tossups for ' + name + ': '
     if query not in cache:
         if not args.xargs:
@@ -114,9 +119,11 @@ def getWordRank(list, word, exploded):
 
 def constructCollection(answerLines, category, difficulty):
     collection = []
+    pool = Pool(processes=4)
+    urls = []
     for answerLine in answerLines:
-        tossupList = getTossups("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All", answerLine)
-        collection.append(tossupList)
+        urls.append("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All")
+    collection = pool.map(getTossups, urls)
     return collection
 
 
