@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 from BeautifulSoup import BeautifulSoup
+from urllib import quote_plus
 import argparse
 import urllib2
 import string
 import collections
-import json
 
 
 def getTossups(url):
@@ -41,8 +41,8 @@ def getAnswerLines(url):
         if index != -1:
             answer = answer[:index]
         answer = answer.strip()
-        answer = answer.translate(string.maketrans("", ""), string.punctuation)
-        answerLines.append(answer)
+        answer = answer.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
+        answerLines.append(quote_plus(answer.lower()).replace("'", "\\'"))
 
     answerLines = filter(None, answerLines)
     return answerLines
@@ -67,13 +67,10 @@ if __name__ == '__main__':
         else:
             difficulty = "All"
 
-        query = "http://quinterest.org/php/search.php?info=" + args.answer + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All"
+        query = "http://quinterest.org/php/search.php?info=" + args.answer + "&categ=" + category + "&difficulty=" + difficulty + "&stype=AnswerQuestion&tournamentyear=All"
         tossups = getAnswerLines(query)
         if args.common:
             counter = collections.Counter(tossups)
             print counter.most_common(args.common)
         else:
-            counter = collections.Counter(tossups)
-            print json.dumps(tossups)
-            print len(tossups)
-            print counter.most_common(5)
+            print ",".join(list(set(tossups)))
