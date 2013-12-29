@@ -17,12 +17,7 @@ def getTossups(name):
         answer = a_tags[i - 1].text_content()
         blob = TextBlob(tossup)
         i = randint(0, len(blob.sentences) - 1)
-        if i == len(blob.sentences) - 1:
-            ordinal = 'last sentence (' + str(i + 1) + ')'
-        elif i == 0:
-            ordinal = 'first sentence'
-        else:
-            ordinal = str(i + 1) + 'th sentence'
+        ordinal = str(i + 1) + 'th out of ' + str(len(blob.sentences)) + ' sentences'
         tossup = {'question': blob.sentences[i], 'answer': answer, 'ordinal': ordinal}
         print tossup['question']
         try:
