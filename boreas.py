@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-from BeautifulSoup import BeautifulSoup
 from operator import itemgetter
 from multiprocessing import Pool
 from textblob import TextBlob
 from textblob_aptagger import PerceptronTagger
 import math
+import lxml.html
 import urlparse
 import string
 import argparse
 import sys
-import urllib2
 import urllib
 import re
 
@@ -66,16 +65,14 @@ def getTossups(url):
     if query not in cache:
         if not args.xargs:
             print "Retrieving " + name + " tossups from Quinterest.org..."
-        html = urllib2.urlopen(url).read()
-
-        soup = BeautifulSoup(html)
-        page = soup.findAll('p')
+        htmltree = lxml.html.parse(url)
+        page = htmltree.xpath('//p')
+        page.pop(0)
         tossups = []
         for tossup in page:
-            tossup = str(tossup.contents)
-            length = tossup.__len__() - 2
-            tossup = tossup[24:length]
-            tossup = tossup.translate(string.maketrans("", ""), """!"#$%&'+,./:;<=>*?@\^_`{|}~""")
+            tossup = str(tossup.text_content())[10:]
+            tossup = tossup.encode('latin-1')
+            tossup = tossup.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
             tossup = re.sub(r'\(.*?\)', '', tossup)
             tossup = re.sub(r'\[.*?\]', '', tossup)
             tossup = "tossup: " + tossup

@@ -1,36 +1,31 @@
 #!/usr/bin/env python
 
-from BeautifulSoup import BeautifulSoup
 from urllib import quote_plus
+import lxml.html
 import argparse
-import urllib2
 import string
 import collections
 
 
 def getTossups(url):
-    html = urllib2.urlopen(url).read()
+    htmltree = lxml.html.parse(url)
+    page = htmltree.xpath('//p')
 
-    soup = BeautifulSoup(html)
-    page = soup.findAll('p')
     tossups = ''
     for tossup in page:
-        tossup = str(tossup.contents)
-        length = tossup.__len__() - 2
-        tossup = tossup[24:length]
+        tossup = str(tossup.text_content())
         tossup += '\n\n'
         tossups += tossup
     return tossups
 
 
 def getAnswerLines(url):
-    html = urllib2.urlopen(url).read()
+    htmltree = lxml.html.parse(url)
+    page = htmltree.xpath("//div[@class='alert alert-info span7']")
 
-    soup = BeautifulSoup(html)
-    page = soup.findAll('div', {"class": "alert alert-info span7"})
     answerLines = []
     for answer in page:
-        answer = str(answer)[70:len(str(answer)) - 7]
+        answer = answer.text_content()[7:]
         index = answer.find("(")
         if index != -1:
             answer = answer[:index]
@@ -41,8 +36,9 @@ def getAnswerLines(url):
         if index != -1:
             answer = answer[:index]
         answer = answer.strip()
+        answer = answer.encode('latin-1')
         answer = answer.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
-        answerLines.append(quote_plus(answer.lower()).replace("'", "\\'"))
+        answerLines.append(quote_plus(answer.lower()))
 
     answerLines = filter(None, answerLines)
     return answerLines
