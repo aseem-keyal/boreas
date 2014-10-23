@@ -36,7 +36,7 @@ def getAnswerLines(url):
         if index != -1:
             answer = answer[:index]
         answer = answer.strip()
-        answer = answer.encode('latin-1')
+        answer = answer.encode('latin-1', 'ignore')
         answer = answer.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
         answerLines.append(quote_plus(answer.lower()))
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         else:
             difficulty = "All"
 
-        query = "http://quinterest.org/php/search.php?info=" + args.answer + "&categ=" + category + "&difficulty=" + difficulty + "&stype=AnswerQuestion&tournamentyear=All"
+        query = "http://quinterest.org/php/combined.php?info=" + args.answer + "&categ=" + category + "&difficulty=" + difficulty + "&sub=None&stype=AnswerQuestion&tournamentyear=All&qtype=Tossups"
         tossups = getAnswerLines(query)
         if args.common:
             counter = collections.Counter(tossups)

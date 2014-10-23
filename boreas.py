@@ -2,8 +2,6 @@
 
 from operator import itemgetter
 from multiprocessing import Pool
-from textblob import TextBlob
-from textblob_aptagger import PerceptronTagger
 import math
 import lxml.html
 import urlparse
@@ -39,19 +37,17 @@ def setupParser():
 
 
 def stripWords(tossups, lower, upper):
-    ap_tagger = PerceptronTagger()
-    realWords = []
-    tossupsBlob = TextBlob(tossups, pos_tagger=ap_tagger)
-    pos = ["NN", "VB", "JJ", "NNP"]
-    if upper and not lower:
-        pos = ["NNP"]
+    allWords = tossups.split(None)
+    commonWords = {"the", "of", "and", "a", "to", "in", "is", "you", "that", "it", "he", "was", "for", "on", "are", "as", "with", "his", "they", "I", "at", "be", "this", "have", "from", "or", "one", "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", "your", "can", "said", "there.", "use", "an", "each", "which", "she", "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", "then", "them", "these", "so", "some", "her", "would", "make", "like", "him", "into", "time", "has", "look", "two", "more", "write", "go", "see", "number", "no", "way", "could", "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now", "find", "long", "down", "day", "did", "get", "come", "made", "may", "part"}
+    realWords = [x for x in allWords if x.lower() not in commonWords]
+
+    if upper and lower:
+        print "Please choose one option: --lower or --upper"
+        sys.exit(1)
+    elif upper and not lower:
+        realWords = [x for x in realWords if x[0].isupper()]
     elif lower and not upper:
-        pos = ["NN", "VB", "JJ"]
-
-    for word in tossupsBlob.tags:
-        if str(word[1]) in pos:
-            realWords.append(word[0])
-
+        realWords = [x for x in realWords if not x[0].isupper()]
     return realWords
 
 
@@ -70,8 +66,7 @@ def getTossups(url):
         page.pop(0)
         tossups = []
         for tossup in page:
-            tossup = str(tossup.text_content())[10:]
-            tossup = tossup.encode('latin-1')
+            tossup = tossup.text_content().encode('latin-1', 'ignore')[10:]
             tossup = tossup.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
             tossup = re.sub(r'\(.*?\)', '', tossup)
             tossup = re.sub(r'\[.*?\]', '', tossup)
@@ -123,7 +118,7 @@ def constructCollection(answerLines, category, difficulty):
     pool = Pool(processes=4)
     urls = []
     for answerLine in answerLines:
-        urls.append("http://quinterest.org/php/search.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All")
+        urls.append("http://quinterest.org/php/combined.php?info=" + answerLine + "&categ=" + category + "&difficulty=" + difficulty + "&stype=Answer&tournamentyear=All&qtype=Tossups")
     collection = pool.map(getTossups, urls)
     return collection
 
@@ -216,7 +211,7 @@ if __name__ == '__main__':
 
             if args.output:
                 f = open(answerLine + '.txt', 'wb+')
-                print "writing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt"
+                print "writing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt [" + str(documentNumber + 1) + "/" + str(len(answerLines)) + "]"
                 f.write("writing " + str(len(words)) + "  results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
                 for item in words:
                         f.write(display % (item[1], item[0]))
