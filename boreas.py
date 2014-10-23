@@ -2,6 +2,7 @@
 
 from operator import itemgetter
 from multiprocessing import Pool
+from time import sleep
 import math
 import lxml.html
 import urlparse
@@ -24,7 +25,6 @@ def setupParser():
             formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('list', help='list of answer lines, replace spaces with "+" in words', type=str)
         parser.add_argument('-a', '--answer', help='selects desired answer line from list', type=str)
-        parser.add_argument('-i', '--index', help='adds index weighting, words coming earlier are weighted more', type=str)
         parser.add_argument('-c', '--category', help='selects desired category for subjects', type=str)
         parser.add_argument('-d', '--difficulty', help='selects desired difficulty for subjects', type=str)
         parser.add_argument('-o', '--output', help='writes tf idf data to specified file', action='store_true')
@@ -61,8 +61,16 @@ def getTossups(url):
     if query not in cache:
         if not args.xargs:
             print "Retrieving " + name + " tossups from Quinterest.org..."
-        htmltree = lxml.html.parse(url)
-        page = htmltree.xpath('//p')
+        try:
+            htmltree = lxml.html.parse(url)
+            page = htmltree.getroot().xpath('//p')
+        except:
+            print(name + " is being throttled")
+            sl = 30
+            print("sleeping for " + str(sl) + " seconds")
+            sleep(sl)
+            htmltree = lxml.html.parse(url)
+            page = htmltree.getroot().xpath('//p')
         page.pop(0)
         tossups = []
         for tossup in page:
@@ -98,7 +106,7 @@ def getWordRank(list, word, exploded):
     docs = 0
     length = 0
     for tossup in list:
-        if tossup.find(word) != -1:
+        if word in tossup:
             sum += tossup.find(word)
             length += len(tossup)
             docs += 1
@@ -106,11 +114,8 @@ def getWordRank(list, word, exploded):
     if sum == 0:
         sum = 1
 
-    avg = (docs * docs * 100) / float(sum)
     if exploded:
-        return "rank: " + str(avg)[:8] + ", tossups: " + str(docs) + "/" + str(len(list)) + ", earliness: " + str(1 / (float(sum) / length))[:8]
-    else:
-        return avg
+        return "tossups: " + str(docs) + "/" + str(len(list)) + ", earliness: " + str(1 / (float(sum) / length))[:8]
 
 
 def constructCollection(answerLines, category, difficulty):
@@ -143,7 +148,7 @@ def wordCount(document):
 def numDocsContaining(word, documentList):
     count = 0
     for document in documentList:
-        if freq(word, document) > 0:
+        if word in document:
             count += 1
     return count
 
@@ -156,17 +161,8 @@ def idf(word, documentList):
     return math.log(len(documentList) / float(numDocsContaining(word, documentList)))
 
 
-def tfidf(word, index, documentList, collection, augment):
-    if augment == 'separate':
-        return "tf-idf: " + str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8] + ', weighting:' + str(getWordRank(collection[index], word, False))[:8]
-    elif augment == 'exploded':
-        return "tf-idf: " + str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8] + ', ' + getWordRank(collection[index], word, True)
-    elif augment == 'combined':
-        return float(str((tf(word, documentList[index]) * idf(word, documentList)) * getWordRank(collection[index], word, False) * 10000)[:8])
-    elif augment == 'alone':
-        return float(str(getWordRank(collection[index], word, False))[:8])
-    else:
-        return float(str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8])
+def tfidf(word, index, documentList, collection):
+    return "tf-idf: " + str(tf(word, documentList[index]) * idf(word, documentList) * 100)[:8] + ', ' + getWordRank(collection[index], word, True)
 
 
 if __name__ == '__main__':
@@ -197,7 +193,7 @@ if __name__ == '__main__':
 
             words = {}
             for word in realWords:
-                words[word] = tfidf(word, documentNumber, documentList, collection, args.index)
+                words[word] = tfidf(word, documentNumber, documentList, collection)
 
             if args.terms and len(words.keys()) > args.terms > 0:
                 words = sorted(words.items(), key=itemgetter(1), reverse=args.reverse)[:args.terms]
@@ -210,7 +206,10 @@ if __name__ == '__main__':
                 display = "%s <= %s\n"
 
             if args.output:
-                f = open(answerLine + '.txt', 'wb+')
+                if len(answerLine) < 200:
+                    f = open(answerLine + '.txt', 'wb+')
+                else:
+                    f = open(answerLine[:200] + '.txt', 'wb+')
                 print "writing " + str(len(words)) + " results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt [" + str(documentNumber + 1) + "/" + str(len(answerLines)) + "]"
                 f.write("writing " + str(len(words)) + "  results for '" + answerLines[documentNumber] + "' to " + answerLine + ".txt\n")
                 for item in words:
