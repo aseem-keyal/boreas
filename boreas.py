@@ -205,7 +205,7 @@ if __name__ == '__main__':
             elif not args.xargs:
                 display = "%s <= %s\n"
 
-            if args.output:
+            if args.output and len(words) > 0:
                 if len(answerLine) < 200:
                     f = open(answerLine + '.txt', 'wb+')
                 else:

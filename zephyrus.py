@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from urllib import quote_plus
 import lxml.html
 import argparse
 import string
 import collections
+import urllib
 
 
 def getTossups(url):
@@ -19,7 +19,7 @@ def getTossups(url):
     return tossups
 
 
-def getAnswerLines(url):
+def getAnswerLines(url, stopWords):
     htmltree = lxml.html.parse(url)
     page = htmltree.xpath("//div[@class='alert alert-info span7']")
 
@@ -38,7 +38,21 @@ def getAnswerLines(url):
         answer = answer.strip()
         answer = answer.encode('latin-1', 'ignore')
         answer = answer.translate(string.maketrans("", ""), """!"#$%&+,./:;<=>*?@\^_`{|}~""")
-        answerLines.append(quote_plus(answer.lower()))
+
+        if "The" in answer or "the" in answer:
+            toParse = answer.split(" ")
+            if toParse[0] in ["the", "The"]:
+                toParse = toParse[1:]
+                answer = " ".join(toParse)
+        if " or " in answer and len(answer) < 100:
+            toParse = answer.split(" or ")
+            for word in toParse:
+                if " " not in word and word.lower() in stopWords:
+                    toParse.remove(word)
+            toParse = [urllib.quote_plus(answerLine.lower()) for answerLine in toParse]
+            answerLines += toParse
+        elif len(answer) < 150:
+            answerLines.append(urllib.quote_plus(answer.lower()))
 
     answerLines = filter(None, answerLines)
     return answerLines
@@ -63,8 +77,15 @@ if __name__ == '__main__':
         else:
             difficulty = "All"
 
-        query = "http://quinterest.org/php/combined.php?info=" + args.answer + "&categ=" + category + "&difficulty=" + difficulty + "&sub=None&stype=AnswerQuestion&tournamentyear=All&qtype=Tossups"
-        tossups = getAnswerLines(query)
+        tossups = []
+        queries = args.answer.split(",")
+        toRemove = []
+        for query in queries:
+            toRemove += query.split("+")
+        for query in queries:
+            url = "http://quinterest.org/php/combined.php?info=" + query + "&categ=" + category + "&difficulty=" + difficulty + "&sub=None&stype=AnswerQuestion&tournamentyear=All&qtype=Tossups"
+            tossups += getAnswerLines(url, toRemove)
+
         if args.common:
             counter = collections.Counter(tossups)
             print counter.most_common(args.common)
